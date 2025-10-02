@@ -1,9 +1,9 @@
 ---
 tags: [python, datenstrukturen, typsystem, grundlagen]
-created: 2025-10-01
+created: 2025-10-02
 ---
 
-← [[Über Python 3.12+|Über Python 3.12+]] | [[INDEX|📑 Index]] | [[02_Mutability vs Immutability|Mutability vs Immutability]] →
+← [[00_Start/Über Python 3.12+|Über Python 3.12+]] | [[INDEX|📑 Index]] | [[01_Grundlagen/01_Einführung/02_Mutability vs Immutability|Mutability vs Immutability]] →
 
 # Python Typ-System
 
@@ -395,3 +395,163 @@ def addiere_zehn(x: int) -> int:
 
 print(addiere_zehn(5))   # 15
 # print(addiere_zehn("5"))  # TypeError mit klarer Meldung
+```
+
+### Fallstrick 2: Mutable Default Arguments
+
+```python
+# ❌ GEFÄHRLICH: Mutable Default Argument
+def füge_hinzu(element, liste=[]):
+    liste.append(element)
+    return liste
+
+# Scheint zu funktionieren...
+print(füge_hinzu(1))  # [1]
+print(füge_hinzu(2))  # [1, 2] - ÜBERRASCHUNG!
+print(füge_hinzu(3))  # [1, 2, 3] - Liste wird wiederverwendet!
+
+# ✅ RICHTIG: None als Default
+def füge_hinzu_richtig(element, liste=None):
+    if liste is None:
+        liste = []
+    liste.append(element)
+    return liste
+
+print(füge_hinzu_richtig(1))  # [1]
+print(füge_hinzu_richtig(2))  # [2] - Neue Liste!
+print(füge_hinzu_richtig(3))  # [3] - Neue Liste!
+```
+
+### Fallstrick 3: Integer Division
+
+```python
+# Python 3: Division gibt immer float zurück
+result = 10 / 3
+print(result)        # 3.3333333333333335
+print(type(result))  # <class 'float'>
+
+# Floor Division für Integer-Ergebnis
+result = 10 // 3
+print(result)        # 3
+print(type(result))  # <class 'int'>
+
+# Achtung bei negativen Zahlen!
+print(-10 // 3)   # -4 (nicht -3!)
+print(-10 / 3)    # -3.3333333333333335
+```
+
+## Performance-Hinweise
+
+### Typ-Checks sind teuer
+
+```python
+# ❌ Ineffizient: Viele isinstance() Checks in Loop
+def verarbeite_liste_langsam(items):
+    result = []
+    for item in items:
+        if isinstance(item, int):  # Check bei jedem Element!
+            result.append(item * 2)
+    return result
+
+# ✅ Besser: Duck Typing nutzen
+def verarbeite_liste_schnell(items):
+    result = []
+    for item in items:
+        try:
+            result.append(item * 2)  # Einfach versuchen!
+        except TypeError:
+            pass  # Ignoriere nicht-multiplizierbare Items
+    return result
+```
+
+### Type Hints haben keine Runtime-Kosten
+
+```python
+# Type Hints werden zur Laufzeit NICHT geprüft
+def addiere(a: int, b: int) -> int:
+    return a + b
+
+# Funktioniert auch mit Strings - KEIN Fehler!
+print(addiere("Hello", " World"))  # Hello World
+
+# Type Hints sind nur für Tools wie mypy
+```
+
+## Praktisches Beispiel
+
+```python
+def beschreibe_typ(obj):
+    """
+    Gibt detaillierte Typ-Informationen über ein Objekt aus
+    """
+    print(f"Wert: {obj}")
+    print(f"Typ: {type(obj).__name__}")
+    print(f"Klasse: {obj.__class__.__name__}")
+    print(f"ID (Speicheradresse): {id(obj)}")
+    print(f"Größe in Bytes: {obj.__sizeof__()}")
+    
+    # Prüfe Eigenschaften
+    eigenschaften = []
+    if hasattr(obj, '__len__'):
+        eigenschaften.append(f"Länge: {len(obj)}")
+    if hasattr(obj, '__iter__'):
+        eigenschaften.append("Iterable")
+    if hasattr(obj, '__getitem__'):
+        eigenschaften.append("Subscriptable")
+    
+    if eigenschaften:
+        print(f"Eigenschaften: {', '.join(eigenschaften)}")
+    
+    print("-" * 50)
+
+# Tests
+beschreibe_typ(42)
+beschreibe_typ("Python")
+beschreibe_typ([1, 2, 3])
+beschreibe_typ({"name": "Alice"})
+```
+
+**Output:**
+```
+Wert: 42
+Typ: int
+Klasse: int
+ID (Speicheradresse): 140234567890
+Größe in Bytes: 28
+--------------------------------------------------
+Wert: Python
+Typ: str
+Klasse: str
+ID (Speicheradresse): 140234567900
+Größe in Bytes: 55
+Eigenschaften: Länge: 6, Iterable, Subscriptable
+--------------------------------------------------
+...
+```
+
+## Zusammenfassung
+
+- ✅ Python hat **dynamische Typisierung** - Typen werden zur Laufzeit bestimmt
+- ✅ Nutze `isinstance()` statt `type() ==` für Typ-Checks
+- ✅ **Duck Typing**: "If it walks like a duck..." - Verhalten > Typ
+- ✅ **Type Hints** sind optional und helfen Tools, nicht Runtime
+- ✅ Verstehe den Unterschied zwischen `==` (Wert) und `is` (Identität)
+- ⚠️ Achte auf **Mutable Default Arguments**
+- ⚠️ Kleine Integer und Strings werden **gecacht**
+
+## Python-Dokumentation
+
+📚 **Offizielle Ressourcen:**
+- [Built-in Types](https://docs.python.org/3/library/stdtypes.html) - Alle eingebauten Typen
+- [Data Model](https://docs.python.org/3/reference/datamodel.html) - Wie Python-Objekte funktionieren
+- [typing Module](https://docs.python.org/3/library/typing.html) - Type Hints Dokumentation
+- [PEP 484](https://peps.python.org/pep-0484/) - Type Hints Proposal
+
+## Verwandte Themen
+
+- [[01_Grundlagen/01_Einführung/02_Mutability vs Immutability|Mutability vs Immutability]]
+- [[01_Grundlagen/01_Einführung/03_Memory Management Basics|Memory Management]]
+- [[05_Pattern_Matching/02_Type_Hints/01_Type Annotations Basics|Type Annotations]]
+
+---
+← [[00_Start/Über Python 3.12+|Über Python 3.12+]] | [[INDEX|📑 Index]] | [[01_Grundlagen/01_Einführung/02_Mutability vs Immutability|Mutability vs Immutability]] →
